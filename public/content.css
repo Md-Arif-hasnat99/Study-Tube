@@ -1,0 +1,85 @@
+/* StudyTube YouTube Distraction-Free Stylesheet */
+
+/* Instant hiding via data-attributes on <html> to prevent layout flash */
+
+/* 1. Hide Shorts buttons & tabs across YouTube */
+html[data-studytube-focus="true"] ytd-guide-entry-renderer a[title="Shorts"],
+html[data-studytube-focus="true"] ytd-mini-guide-entry-renderer a[title="Shorts"],
+html[data-studytube-focus="true"] ytd-guide-entry-renderer:has(a[href*="/shorts"]),
+html[data-studytube-focus="true"] ytd-mini-guide-entry-renderer:has(a[href*="/shorts"]),
+html[data-studytube-focus="true"] yt-tab-shape[tab-title="Shorts"],
+html[data-studytube-focus="true"] ytd-reel-shelf-renderer,
+html[data-studytube-focus="true"] ytd-rich-shelf-renderer[is-shorts],
+html[data-studytube-focus="true"] ytd-rich-section-renderer:has(ytd-reel-shelf-renderer) {
+  display: none !important;
+}
+
+/* 2. Hide Homepage Recommendation Feed when Focus Mode is active */
+html[data-studytube-focus="true"][data-studytube-hide-recommendations="true"] ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer {
+  display: none !important;
+}
+
+/* 3. Hide Video Comments when configured */
+html[data-studytube-focus="true"][data-studytube-hide-comments="true"] #comments {
+  display: none !important;
+}
+
+/* 4. Hide Related Sidebar Videos on Watch page */
+html[data-studytube-focus="true"][data-studytube-hide-sidebar="true"] #related,
+html[data-studytube-focus="true"][data-studytube-hide-sidebar="true"] ytd-watch-next-secondary-results-renderer {
+  display: none !important;
+}
+
+/* 5. Minimalist StudyTube Homepage Focus Container */
+.studytube-focus-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 60px auto 40px auto;
+  max-width: 640px;
+  padding: 32px 24px;
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #171717;
+  transition: all 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .studytube-focus-banner {
+    background: #202020;
+    border-color: #343434;
+    color: #F5F5F5;
+  }
+}
+
+.studytube-focus-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2F6B4F;
+  background: #E7F0E9;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.studytube-focus-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.studytube-focus-desc {
+  font-size: 14px;
+  color: #737373;
+  line-height: 1.5;
+  max-width: 480px;
+}

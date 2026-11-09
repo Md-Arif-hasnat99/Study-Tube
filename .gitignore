@@ -1,5 +1,31 @@
-//doc
-ARCHITECTURE.md
-DESIGN.md
-PRD.md
-ROADMAP.md
+# Node & Build artifacts
+node_modules/
+dist/
+dist-zip/
+
+# Logs & cache
+*.log
+.eslintcache
+
+# Environment
+.env
+.env.local
+*.local
+
+# Editor & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Python & ML artifacts
+__pycache__/
+*.pyc
+venv/
+.venv/
+.pytest_cache/
+ml/models/*.pkl
+ml/models/*.onnx
+ml/data/raw/
+ml/dataset/raw/*.csv
+ml/dataset/processed/*.csv
