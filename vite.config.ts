@@ -4,6 +4,18 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/tests/setup.ts'],
+    include: ['src/tests/**/*.test.ts', 'src/tests/**/*.test.tsx'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+      exclude: ['src/tests/**', 'src/popup/main.tsx'],
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
