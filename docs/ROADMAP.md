@@ -7,9 +7,9 @@
 
 - [x] Create GitHub repository.
 - [x] Create local repository.
-- [ ] Complete documentation.
-- [ ] Define contribution guidelines.
-- [ ] Finalize project license.
+- [x] Complete documentation.
+- [x] Define contribution guidelines.
+- [x] Finalize project license.
 
 ---
 
