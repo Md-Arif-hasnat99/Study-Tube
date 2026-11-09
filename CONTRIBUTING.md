@@ -431,3 +431,4 @@ Do not submit contributions that include code derived from GPL-licensed projects
 For questions about contributing that are not covered by this document, open a GitHub Discussion in the repository or reference the existing documentation in the `docs/` directory.
 
 GitHub repository: https://github.com/Md-Arif-hasnat99/Study-Tube
+
