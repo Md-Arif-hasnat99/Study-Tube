@@ -1,4 +1,5 @@
 import { FocusSettings, DEFAULT_SETTINGS } from '../types';
+import { classifier } from '../ml/classifier';
 
 let currentSettings: FocusSettings = { ...DEFAULT_SETTINGS };
 
@@ -12,12 +13,14 @@ function applySettingsToDOM(settings: FocusSettings) {
     root.setAttribute('data-studytube-hide-comments', settings.hideComments ? 'true' : 'false');
     root.setAttribute('data-studytube-hide-sidebar', settings.hideSidebar ? 'true' : 'false');
     renderHomepageBanner();
+    classifyVisibleVideos();
   } else {
     root.removeAttribute('data-studytube-focus');
     root.removeAttribute('data-studytube-hide-recommendations');
     root.removeAttribute('data-studytube-hide-comments');
     root.removeAttribute('data-studytube-hide-sidebar');
     removeHomepageBanner();
+    resetClassifiedVideos();
   }
 }
 
@@ -61,31 +64,95 @@ function removeHomepageBanner() {
   }
 }
 
-// Initial storage fetch
-if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-  chrome.storage.local.get('studytube_settings', (res) => {
-    if (res['studytube_settings']) {
-      currentSettings = { ...DEFAULT_SETTINGS, ...res['studytube_settings'] };
-    }
-    applySettingsToDOM(currentSettings);
-  });
+// ML classification on visible YouTube video cards (search results & lists)
+function classifyVisibleVideos() {
+  if (!currentSettings.isFocusModeActive) return;
 
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes['studytube_settings']) {
-      currentSettings = { ...DEFAULT_SETTINGS, ...changes['studytube_settings'].newValue };
-      applySettingsToDOM(currentSettings);
+  const videoCards = document.querySelectorAll<HTMLElement>(
+    'ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer'
+  );
+
+  videoCards.forEach((card) => {
+    if (card.dataset.studytubeProcessed) return;
+
+    const titleEl = card.querySelector<HTMLElement>('#video-title, #video-title-link, .ytd-video-renderer #video-title');
+    const title = titleEl?.textContent?.trim() || '';
+    if (!title) return;
+
+    card.dataset.studytubeProcessed = 'true';
+
+    const result = classifier.predict(title);
+
+    if (result.isEducational) {
+      card.setAttribute('data-studytube-filtered', 'educational');
+      if (!card.querySelector('.studytube-edu-tag')) {
+        const tag = document.createElement('div');
+        tag.className = 'studytube-edu-tag';
+        tag.innerHTML = `
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Study Content
+        `;
+        const metadataAnchor = card.querySelector('#metadata-line, #channel-info');
+        if (metadataAnchor && metadataAnchor.parentNode) {
+          metadataAnchor.parentNode.insertBefore(tag, metadataAnchor.nextSibling);
+        }
+      }
+    } else {
+      // Non-educational video during Focus Mode
+      card.setAttribute('data-studytube-filtered', 'dimmed');
     }
   });
 }
 
-// DOM observation for dynamic single-page-app navigation on YouTube
+function resetClassifiedVideos() {
+  const cards = document.querySelectorAll<HTMLElement>('[data-studytube-processed]');
+  cards.forEach((card) => {
+    delete card.dataset.studytubeProcessed;
+    card.removeAttribute('data-studytube-filtered');
+    const tag = card.querySelector('.studytube-edu-tag');
+    if (tag) tag.remove();
+  });
+}
+
+// Initialize Model and Storage
+async function init() {
+  await classifier.loadModel();
+
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get('studytube_settings', (res) => {
+      if (res['studytube_settings']) {
+        currentSettings = { ...DEFAULT_SETTINGS, ...res['studytube_settings'] };
+      }
+      applySettingsToDOM(currentSettings);
+    });
+
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes['studytube_settings']) {
+        currentSettings = { ...DEFAULT_SETTINGS, ...changes['studytube_settings'].newValue };
+        applySettingsToDOM(currentSettings);
+      }
+    });
+  }
+}
+
+init();
+
+// DOM observation for dynamic content
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 const observer = new MutationObserver(() => {
-  if (currentSettings.isFocusModeActive && currentSettings.hideRecommendations) {
-    renderHomepageBanner();
+  if (currentSettings.isFocusModeActive) {
+    if (currentSettings.hideRecommendations) {
+      renderHomepageBanner();
+    }
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      classifyVisibleVideos();
+    }, 200);
   }
 });
 
-// Start observing when document is ready
 if (document.body) {
   observer.observe(document.body, { childList: true, subtree: true });
 } else {
@@ -96,9 +163,11 @@ if (document.body) {
   });
 }
 
-// Listen for YouTube URL navigation events (yt-navigate-finish)
 window.addEventListener('yt-navigate-finish', () => {
-  if (currentSettings.isFocusModeActive && currentSettings.hideRecommendations) {
-    renderHomepageBanner();
+  if (currentSettings.isFocusModeActive) {
+    if (currentSettings.hideRecommendations) {
+      renderHomepageBanner();
+    }
+    setTimeout(classifyVisibleVideos, 400);
   }
 });

@@ -42,5 +42,15 @@
       ],
       "run_at": "document_start"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "model.json"
+      ],
+      "matches": [
+        "*://*.youtube.com/*"
+      ]
+    }
   ]
 }

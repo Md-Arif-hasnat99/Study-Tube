@@ -83,3 +83,34 @@ html[data-studytube-focus="true"][data-studytube-hide-sidebar="true"] ytd-watch-
   line-height: 1.5;
   max-width: 480px;
 }
+
+/* 6. ML Filtered Video Cards Styling */
+ytd-video-renderer[data-studytube-filtered="dimmed"],
+ytd-compact-video-renderer[data-studytube-filtered="dimmed"] {
+  opacity: 0.22 !important;
+  filter: grayscale(85%) !important;
+  transition: opacity 0.2s ease, filter 0.2s ease !important;
+}
+
+ytd-video-renderer[data-studytube-filtered="dimmed"]:hover,
+ytd-compact-video-renderer[data-studytube-filtered="dimmed"]:hover {
+  opacity: 0.8 !important;
+  filter: grayscale(20%) !important;
+}
+
+.studytube-edu-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2F6B4F;
+  background: #E7F0E9;
+  border: 1px solid rgba(47, 107, 79, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+  width: fit-content;
+}
+
+

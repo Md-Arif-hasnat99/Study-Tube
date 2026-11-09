@@ -48,3 +48,4 @@ export const DEFAULT_TIMER: TimerState = {
   remainingSeconds: 25 * 60,
   endsAt: null,
 };
+

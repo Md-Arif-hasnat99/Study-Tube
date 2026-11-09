@@ -60,35 +60,35 @@
 
 ## Phase 6: ML Dataset
 
-- [ ] Download candidate datasets.
-- [ ] Analyze label quality.
-- [ ] Inspect dataset licensing.
-- [ ] Clean metadata.
-- [ ] Remove duplicates.
-- [ ] Build training dataset.
-- [ ] Document preprocessing.
+- [x] Download candidate datasets.
+- [x] Analyze label quality.
+- [x] Inspect dataset licensing.
+- [x] Clean metadata.
+- [x] Remove duplicates.
+- [x] Build training dataset.
+- [x] Document preprocessing.
 
 ---
 
 ## Phase 7: ML Training
 
-- [ ] Implement TF-IDF.
-- [ ] Train Logistic Regression.
-- [ ] Evaluate model.
-- [ ] Analyze classification errors.
-- [ ] Tune classification threshold.
-- [ ] Export model.
+- [x] Implement TF-IDF.
+- [x] Train Logistic Regression.
+- [x] Evaluate model.
+- [x] Analyze classification errors.
+- [x] Tune classification threshold.
+- [x] Export model.
 
 ---
 
 ## Phase 8: ML Integration
 
-- [ ] Implement browser tokenizer.
-- [ ] Implement TF-IDF inference.
-- [ ] Implement Logistic Regression.
-- [ ] Validate against Python predictions.
-- [ ] Integrate classifier with filtering.
-- [ ] Cache classification results.
+- [x] Implement browser tokenizer.
+- [x] Implement TF-IDF inference.
+- [x] Implement Logistic Regression.
+- [x] Validate against Python predictions.
+- [x] Integrate classifier with filtering.
+- [x] Cache classification results.
 
 ---
 

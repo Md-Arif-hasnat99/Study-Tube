@@ -101,3 +101,4 @@ const publicDir = path.resolve(__dirname, '../public');
   fs.writeFileSync(path.join(publicDir, `icon${size}.png`), png);
   console.log(`Generated icon${size}.png`);
 });
+

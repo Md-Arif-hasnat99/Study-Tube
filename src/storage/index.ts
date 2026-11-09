@@ -77,3 +77,4 @@ export function subscribeToSettings(callback: (settings: FocusSettings) => void)
     return () => window.removeEventListener('storage', handler);
   }
 }
+
