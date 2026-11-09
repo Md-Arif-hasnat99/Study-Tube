@@ -27,5 +27,5 @@ venv/
 ml/models/*.pkl
 ml/models/*.onnx
 ml/data/raw/
-ml/dataset/raw/*.csv
-ml/dataset/processed/*.csv
+ml/*.csv
+ml/**/*.csv
