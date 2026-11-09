@@ -140,3 +140,52 @@ export class EducationalClassifier {
 
 // Export pre-initialized singleton with bundled production model weights
 export const classifier = new EducationalClassifier(defaultModelData as unknown as ModelData);
+
+export function isDistractingQuery(query: string): { isDistracting: boolean; reason?: string } {
+  if (!query) return { isDistracting: false };
+  const lower = query.toLowerCase().trim();
+
+  // Strong educational indicators: do not restrict if user is explicitly studying
+  const educationalPattern = /\b(tutorial|course|lecture|learn|study|lesson|class|exam|revision|history of|science of|film analysis|cinema study|music theory|explained|documentary|how to code|how to program|math|physics|chemistry|biology|programming|computer science|algorithm|datastructure)\b/i;
+  if (educationalPattern.test(lower)) {
+    return { isDistracting: false };
+  }
+
+  // Strong entertainment & distraction patterns
+  const entertainmentRules: Array<{ pattern: RegExp; reason: string }> = [
+    {
+      pattern: /\b(movie|movies|film|cinema|trailer|teaser|full movie|box office|hollywood|bollywood|tollywood|hindi dubbed|action scene|action movie|horror movie|comedy movie)\b/i,
+      reason: 'Movies & Film Entertainment',
+    },
+    {
+      pattern: /\b(song|songs|music|lyrics|audio|remix|dj|album|soundtrack|vevo|lofi beats|party song|dance song|punjabi song|hindi song|pop music|rap|hip hop|sing along|karaoke)\b/i,
+      reason: 'Music & Songs',
+    },
+    {
+      pattern: /\b(gameplay|gaming|walkthrough part|lets play|stream highlights|fortnite|minecraft|gta|roblox|valorant|pubg|free fire|bgmi)\b/i,
+      reason: 'Gaming & Gameplay Streams',
+    },
+    {
+      pattern: /\b(prank|pranks|funny moments|meme|memes|vlog|daily vlog|roast|standup comedy|comedy show|celebrity gossip|drama|tiktok compilation)\b/i,
+      reason: 'Comedy, Vlogs & Viral Content',
+    },
+    {
+      pattern: /\b(web series|season \d+|episode \d+|ep \d+|kdrama|k-drama|anime fight|soap opera)\b/i,
+      reason: 'TV Shows & Web Series',
+    },
+  ];
+
+  for (const rule of entertainmentRules) {
+    if (rule.pattern.test(lower)) {
+      return { isDistracting: true, reason: rule.reason };
+    }
+  }
+
+  // Check with ML model
+  const mlResult = classifier.predict(lower);
+  if (!mlResult.isEducational && mlResult.probability < 0.35) {
+    return { isDistracting: true, reason: 'Non-study content detected by StudyTube ML' };
+  }
+
+  return { isDistracting: false };
+}

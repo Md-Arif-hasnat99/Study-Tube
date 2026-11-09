@@ -1,8 +1,10 @@
 import { FocusSettings, DEFAULT_SETTINGS } from '../types';
-import { classifier } from '../ml/classifier';
+import { classifier, isDistractingQuery } from '../ml/classifier';
 
 let currentSettings: FocusSettings = { ...DEFAULT_SETTINGS };
 let isTemporarilyRevealed = false;
+const overriddenSearches = new Set<string>();
+const overriddenVideos = new Set<string>();
 
 // Apply settings to document element dataset to toggle CSS rules instantaneously
 function applySettingsToDOM(settings: FocusSettings) {
@@ -19,20 +21,51 @@ function applySettingsToDOM(settings: FocusSettings) {
       root.removeAttribute('data-studytube-reveal');
     }
     renderHomepageBanner();
-    classifyVisibleVideos();
+    handlePageContext();
   } else {
     root.removeAttribute('data-studytube-focus');
     root.removeAttribute('data-studytube-hide-recommendations');
     root.removeAttribute('data-studytube-hide-comments');
     root.removeAttribute('data-studytube-hide-sidebar');
     root.removeAttribute('data-studytube-reveal');
+    root.removeAttribute('data-studytube-search-restricted');
     removeHomepageBanner();
     removeSearchFilterBanner();
+    removeSearchRestrictedGate();
+    removePlayerGuardOverlay();
     resetClassifiedVideos();
   }
 }
 
-// Render clean StudyTube banner on homepage if feed is hidden
+// Router dispatcher based on current YouTube page
+function handlePageContext() {
+  if (!currentSettings.isFocusModeActive) return;
+
+  const path = window.location.pathname;
+
+  if (path === '/' || path === '') {
+    renderHomepageBanner();
+    removeSearchRestrictedGate();
+    removePlayerGuardOverlay();
+  } else if (path.startsWith('/results')) {
+    removeHomepageBanner();
+    removePlayerGuardOverlay();
+    const isRestricted = checkSearchQueryRestriction();
+    if (!isRestricted) {
+      classifyVisibleVideos();
+    }
+  } else if (path === '/watch') {
+    removeHomepageBanner();
+    removeSearchRestrictedGate();
+    checkWatchPageRestriction();
+    classifyVisibleVideos();
+  } else {
+    removeSearchRestrictedGate();
+    removePlayerGuardOverlay();
+  }
+}
+
+// 1. Homepage Focus Container
 function renderHomepageBanner() {
   const isHomepage = window.location.pathname === '/' || window.location.pathname === '';
   if (!isHomepage || !currentSettings.isFocusModeActive || !currentSettings.hideRecommendations) {
@@ -67,12 +100,246 @@ function renderHomepageBanner() {
 
 function removeHomepageBanner() {
   const banner = document.getElementById('studytube-home-banner');
-  if (banner) {
-    banner.remove();
+  if (banner) banner.remove();
+}
+
+// 2. Search Query Restriction (Focus Gate)
+function checkSearchQueryRestriction(): boolean {
+  if (!currentSettings.isFocusModeActive || !currentSettings.restrictEntertainmentSearches) {
+    removeSearchRestrictedGate();
+    return false;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const query = (urlParams.get('search_query') || '').trim();
+  if (!query) return false;
+
+  // If user previously completed the reflection pause for this query, allow it
+  if (overriddenSearches.has(query.toLowerCase())) {
+    removeSearchRestrictedGate();
+    return false;
+  }
+
+  const check = isDistractingQuery(query);
+  if (check.isDistracting) {
+    renderSearchRestrictedGate(query, check.reason || 'Entertainment Query');
+    return true;
+  } else {
+    removeSearchRestrictedGate();
+    return false;
   }
 }
 
-// Update Search Results status banner
+function renderSearchRestrictedGate(query: string, reason: string) {
+  document.documentElement.setAttribute('data-studytube-search-restricted', 'true');
+
+  const existing = document.getElementById('studytube-restricted-gate');
+  if (existing) return;
+
+  const targetContainer = document.querySelector('ytd-search #contents, #primary #contents, ytd-section-list-renderer');
+  if (!targetContainer) return;
+
+  const gate = document.createElement('div');
+  gate.id = 'studytube-restricted-gate';
+  gate.className = 'studytube-restricted-gate';
+  gate.innerHTML = `
+    <div class="studytube-gate-icon-wrapper">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <div class="studytube-gate-badge">Search Restricted • Focus Mode</div>
+    <div class="studytube-gate-title">Entertainment Content Blocked</div>
+    <div class="studytube-gate-message">
+      The search query <span class="studytube-gate-query-highlight">"${escapeHtml(query)}"</span> was restricted because it is categorized under <strong>${escapeHtml(reason)}</strong>. Focus Mode protects your study sessions from distraction loops.
+    </div>
+    <div class="studytube-gate-actions">
+      <button id="studytube-gate-home" class="studytube-btn-primary">
+        Back to Learning Space
+      </button>
+      <button id="studytube-gate-suggest" class="studytube-btn-secondary">
+        Search Study Materials Instead
+      </button>
+      <button id="studytube-gate-override" class="studytube-btn-secondary">
+        Allow with 10s Reflection
+      </button>
+    </div>
+  `;
+
+  targetContainer.prepend(gate);
+
+  // Button actions
+  gate.querySelector('#studytube-gate-home')?.addEventListener('click', () => {
+    window.location.href = 'https://www.youtube.com/';
+  });
+
+  gate.querySelector('#studytube-gate-suggest')?.addEventListener('click', () => {
+    const searchInput = document.querySelector<HTMLInputElement>('input#search, input[name="search_query"]');
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.focus();
+    }
+  });
+
+  const overrideBtn = gate.querySelector<HTMLButtonElement>('#studytube-gate-override');
+  if (overrideBtn) {
+    let countdown = 10;
+    let timerId: ReturnType<typeof setInterval> | null = null;
+
+    overrideBtn.addEventListener('click', () => {
+      if (timerId) return;
+
+      overrideBtn.disabled = true;
+      overrideBtn.textContent = `Reflecting... (${countdown}s)`;
+
+      timerId = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          overrideBtn.textContent = `Reflecting... (${countdown}s)`;
+        } else {
+          if (timerId) clearInterval(timerId);
+          overriddenSearches.add(query.toLowerCase());
+          removeSearchRestrictedGate();
+          classifyVisibleVideos();
+        }
+      }, 1000);
+    });
+  }
+}
+
+function removeSearchRestrictedGate() {
+  document.documentElement.removeAttribute('data-studytube-search-restricted');
+  const gate = document.getElementById('studytube-restricted-gate');
+  if (gate) gate.remove();
+}
+
+// 3. Watch Page Protection (Video Player Guard)
+function checkWatchPageRestriction() {
+  if (!currentSettings.isFocusModeActive || !currentSettings.restrictEntertainmentVideos) {
+    removePlayerGuardOverlay();
+    return;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const videoId = urlParams.get('v') || '';
+  if (!videoId || overriddenVideos.has(videoId)) {
+    removePlayerGuardOverlay();
+    return;
+  }
+
+  const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1 yt-formatted-string');
+  const title = (titleEl?.textContent?.trim() || document.title).replace('- YouTube', '').trim();
+  if (!title) return;
+
+  const channelEl = document.querySelector('#channel-name, .ytd-channel-name');
+  const channelName = channelEl?.textContent?.trim() || '';
+  const hasMusicBadge = !!document.querySelector('yt-icon[badge-style="BADGE_STYLE_TYPE_VERIFIED_ARTIST"], ytd-badge-supported-renderer [aria-label*="Artist"]');
+
+  let isRestricted = false;
+  let reason = 'Entertainment / Non-study content';
+
+  if (hasMusicBadge || /\b(vevo|music|topic)\b/i.test(channelName)) {
+    isRestricted = true;
+    reason = 'Music Video or Artist Channel';
+  } else {
+    const queryCheck = isDistractingQuery(title);
+    if (queryCheck.isDistracting) {
+      isRestricted = true;
+      reason = queryCheck.reason || reason;
+    } else {
+      const pred = classifier.predict(`${title} ${channelName}`);
+      if (!pred.isEducational && pred.probability < 0.35) {
+        isRestricted = true;
+        reason = 'Classified as non-educational video';
+      }
+    }
+  }
+
+  if (isRestricted) {
+    // Pause video
+    const video = document.querySelector<HTMLVideoElement>('video.html5-main-video');
+    if (video && !video.paused) {
+      video.pause();
+    }
+    renderPlayerGuardOverlay(title, reason, videoId);
+  } else {
+    removePlayerGuardOverlay();
+  }
+}
+
+function renderPlayerGuardOverlay(title: string, reason: string, videoId: string) {
+  const playerContainer = document.querySelector('#movie_player, .html5-video-player');
+  if (!playerContainer || document.getElementById('studytube-player-guard')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'studytube-player-guard';
+  overlay.className = 'studytube-player-guard-overlay';
+  overlay.innerHTML = `
+    <div class="studytube-player-guard-badge">Focus Mode • Study Guard</div>
+    <div class="studytube-player-guard-title">Non-Study Video Blocked</div>
+    <div class="studytube-player-guard-desc">
+      <strong>"${escapeHtml(title)}"</strong> is detected as <strong>${escapeHtml(reason)}</strong>. Stay on track with your study session.
+    </div>
+    <div class="studytube-gate-actions">
+      <button id="studytube-player-home" class="studytube-btn-primary">
+        Back to Learning Space
+      </button>
+      <button id="studytube-player-override" class="studytube-btn-secondary">
+        Allow with 10s Reflection
+      </button>
+    </div>
+  `;
+
+  playerContainer.appendChild(overlay);
+
+  overlay.querySelector('#studytube-player-home')?.addEventListener('click', () => {
+    window.location.href = 'https://www.youtube.com/';
+  });
+
+  const overrideBtn = overlay.querySelector<HTMLButtonElement>('#studytube-player-override');
+  if (overrideBtn) {
+    let countdown = 10;
+    let timerId: ReturnType<typeof setInterval> | null = null;
+
+    overrideBtn.addEventListener('click', () => {
+      if (timerId) return;
+
+      overrideBtn.disabled = true;
+      overrideBtn.textContent = `Reflecting... (${countdown}s)`;
+
+      timerId = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          overrideBtn.textContent = `Reflecting... (${countdown}s)`;
+        } else {
+          if (timerId) clearInterval(timerId);
+          overriddenVideos.add(videoId);
+          removePlayerGuardOverlay();
+          const video = document.querySelector<HTMLVideoElement>('video.html5-main-video');
+          if (video) video.play();
+        }
+      }, 1000);
+    });
+  }
+}
+
+function removePlayerGuardOverlay() {
+  const overlay = document.getElementById('studytube-player-guard');
+  if (overlay) overlay.remove();
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// 4. Update Search Results Status Banner
 function updateSearchFilterBanner(hiddenCount: number, educationalCount: number) {
   const isSearchPage = window.location.pathname.startsWith('/results');
   if (!isSearchPage || !currentSettings.isFocusModeActive) {
@@ -124,12 +391,10 @@ function updateSearchFilterBanner(hiddenCount: number, educationalCount: number)
 
 function removeSearchFilterBanner() {
   const banner = document.getElementById('studytube-search-banner');
-  if (banner) {
-    banner.remove();
-  }
+  if (banner) banner.remove();
 }
 
-// ML classification on visible YouTube video cards (search results & lists)
+// 5. ML classification on visible YouTube video cards
 function classifyVisibleVideos() {
   if (!currentSettings.isFocusModeActive) return;
 
@@ -163,7 +428,7 @@ function classifyVisibleVideos() {
     );
     const title = titleEl?.textContent?.trim() || '';
 
-    // If title is not yet available (DOM rendering), skip for next mutation pass
+    // If title is not yet available, skip for next mutation pass
     if (!title) return;
 
     card.dataset.studytubeProcessed = 'true';
@@ -205,7 +470,6 @@ function classifyVisibleVideos() {
         }
       }
     } else {
-      // Non-educational video during Focus Mode: completely hide!
       card.setAttribute('data-studytube-filtered', 'hidden');
       hiddenCount++;
     }
@@ -255,12 +519,9 @@ init();
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 const observer = new MutationObserver(() => {
   if (currentSettings.isFocusModeActive) {
-    if (currentSettings.hideRecommendations) {
-      renderHomepageBanner();
-    }
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      classifyVisibleVideos();
+      handlePageContext();
     }, 150);
   }
 });
@@ -278,10 +539,8 @@ if (document.body) {
 window.addEventListener('yt-navigate-finish', () => {
   isTemporarilyRevealed = false;
   if (currentSettings.isFocusModeActive) {
-    if (currentSettings.hideRecommendations) {
-      renderHomepageBanner();
-    }
-    setTimeout(classifyVisibleVideos, 300);
-    setTimeout(classifyVisibleVideos, 800); // Second check for async search loads
+    handlePageContext();
+    setTimeout(handlePageContext, 300);
+    setTimeout(handlePageContext, 800);
   }
 });

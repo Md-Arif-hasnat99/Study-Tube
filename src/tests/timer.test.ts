@@ -21,6 +21,11 @@ describe('DEFAULT_SETTINGS', () => {
     expect(DEFAULT_SETTINGS.filterSearchEnabled).toBe(false);
   });
 
+  it('has restrictEntertainmentSearches and restrictEntertainmentVideos true by default', () => {
+    expect(DEFAULT_SETTINGS.restrictEntertainmentSearches).toBe(true);
+    expect(DEFAULT_SETTINGS.restrictEntertainmentVideos).toBe(true);
+  });
+
   it('has timer duration of 25 minutes by default', () => {
     expect(DEFAULT_SETTINGS.timerDurationMinutes).toBe(25);
   });

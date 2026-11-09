@@ -277,4 +277,36 @@ describe('EducationalClassifier', () => {
       });
     }
   });
+
+  describe('isDistractingQuery', () => {
+    it('restricts movie searches', async () => {
+      const { isDistractingQuery } = await import('../ml/classifier');
+      expect(isDistractingQuery('movie').isDistracting).toBe(true);
+      expect(isDistractingQuery('new hindi movies 2024').isDistracting).toBe(true);
+      expect(isDistractingQuery('batman official trailer').isDistracting).toBe(true);
+    });
+
+    it('restricts music and song searches', async () => {
+      const { isDistractingQuery } = await import('../ml/classifier');
+      expect(isDistractingQuery('music').isDistracting).toBe(true);
+      expect(isDistractingQuery('latest songs').isDistracting).toBe(true);
+      expect(isDistractingQuery('punjabi song dj remix').isDistracting).toBe(true);
+      expect(isDistractingQuery('lofi beats to chill').isDistracting).toBe(true);
+    });
+
+    it('restricts gaming and comedy searches', async () => {
+      const { isDistractingQuery } = await import('../ml/classifier');
+      expect(isDistractingQuery('minecraft gameplay part 1').isDistracting).toBe(true);
+      expect(isDistractingQuery('funny pranks compilation').isDistracting).toBe(true);
+    });
+
+    it('allows educational and study searches', async () => {
+      const { isDistractingQuery } = await import('../ml/classifier');
+      expect(isDistractingQuery('python tutorial for beginners').isDistracting).toBe(false);
+      expect(isDistractingQuery('mit linear algebra lecture').isDistracting).toBe(false);
+      expect(isDistractingQuery('history of cinema documentary').isDistracting).toBe(false);
+      expect(isDistractingQuery('music theory lesson').isDistracting).toBe(false);
+      expect(isDistractingQuery('physics class 12 revision').isDistracting).toBe(false);
+    });
+  });
 });

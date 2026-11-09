@@ -296,6 +296,32 @@ export const App: React.FC = () => {
               className="rounded border-brand-border text-focus-green focus:ring-focus-green accent-[#2F6B4F]"
             />
           </label>
+
+          <label className="flex items-center justify-between cursor-pointer py-1">
+            <div className="flex items-center space-x-2 text-xs">
+              <Shield className="w-3.5 h-3.5 text-brand-muted" />
+              <span>Restrict Music & Movie Searches</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.restrictEntertainmentSearches}
+              onChange={() => handleToggleOption('restrictEntertainmentSearches')}
+              className="rounded border-brand-border text-focus-green focus:ring-focus-green accent-[#2F6B4F]"
+            />
+          </label>
+
+          <label className="flex items-center justify-between cursor-pointer py-1">
+            <div className="flex items-center space-x-2 text-xs">
+              <Shield className="w-3.5 h-3.5 text-brand-muted" />
+              <span>Block Non-Study Watch Pages</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.restrictEntertainmentVideos}
+              onChange={() => handleToggleOption('restrictEntertainmentVideos')}
+              className="rounded border-brand-border text-focus-green focus:ring-focus-green accent-[#2F6B4F]"
+            />
+          </label>
         </section>
       ) : (
         <section className="mt-4 bg-brand-surface/60 border border-brand-border rounded-xl p-3 space-y-1.5">
@@ -303,18 +329,22 @@ export const App: React.FC = () => {
             <span>Active Protections</span>
             <span className="text-[10px] text-focus-green font-semibold">Ready</span>
           </div>
-          <div className="grid grid-cols-3 gap-1.5 pt-1">
+          <div className="grid grid-cols-2 gap-1.5 pt-1">
             <div className="flex items-center space-x-1 text-[11px] text-brand-muted">
               <CheckCircle2 className="w-3 h-3 text-focus-green shrink-0" />
-              <span className="truncate">Shorts</span>
+              <span className="truncate">Shorts & Feed</span>
             </div>
             <div className="flex items-center space-x-1 text-[11px] text-brand-muted">
               <CheckCircle2 className="w-3 h-3 text-focus-green shrink-0" />
-              <span className="truncate">Feed</span>
+              <span className="truncate">Music & Movies Blocked</span>
             </div>
             <div className="flex items-center space-x-1 text-[11px] text-brand-muted">
               <CheckCircle2 className="w-3 h-3 text-focus-green shrink-0" />
-              <span className="truncate">Comments</span>
+              <span className="truncate">Comments Hidden</span>
+            </div>
+            <div className="flex items-center space-x-1 text-[11px] text-brand-muted">
+              <CheckCircle2 className="w-3 h-3 text-focus-green shrink-0" />
+              <span className="truncate">Focus Gate Active</span>
             </div>
           </div>
         </section>

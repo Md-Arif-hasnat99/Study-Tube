@@ -6,6 +6,8 @@ export interface FocusSettings {
   hideSidebar: boolean;
   trustedChannels: string[];
   filterSearchEnabled: boolean;
+  restrictEntertainmentSearches: boolean;
+  restrictEntertainmentVideos: boolean;
   timerDurationMinutes: number;
 }
 
@@ -39,6 +41,8 @@ export const DEFAULT_SETTINGS: FocusSettings = {
   hideSidebar: true,
   trustedChannels: [],
   filterSearchEnabled: false,
+  restrictEntertainmentSearches: true,
+  restrictEntertainmentVideos: true,
   timerDurationMinutes: 25,
 };
 
