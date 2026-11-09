@@ -84,20 +84,25 @@ html[data-studytube-focus="true"][data-studytube-hide-sidebar="true"] ytd-watch-
   max-width: 480px;
 }
 
-/* 6. ML Filtered Video Cards Styling */
-ytd-video-renderer[data-studytube-filtered="dimmed"],
-ytd-compact-video-renderer[data-studytube-filtered="dimmed"] {
-  opacity: 0.22 !important;
-  filter: grayscale(85%) !important;
-  transition: opacity 0.2s ease, filter 0.2s ease !important;
+/* 6. ML Filtered Video Cards - Complete Hiding in Focus Mode */
+html[data-studytube-focus="true"] [data-studytube-filtered="hidden"],
+html[data-studytube-focus="true"] ytd-movie-renderer,
+html[data-studytube-focus="true"] ytd-radio-renderer,
+html[data-studytube-focus="true"] ytd-shelf-renderer:has(ytd-movie-renderer),
+html[data-studytube-focus="true"] ytd-shelf-renderer:has(ytd-radio-renderer) {
+  display: none !important;
 }
 
-ytd-video-renderer[data-studytube-filtered="dimmed"]:hover,
-ytd-compact-video-renderer[data-studytube-filtered="dimmed"]:hover {
-  opacity: 0.8 !important;
-  filter: grayscale(20%) !important;
+/* Optional temporary reveal mode (shows non-study videos dimmed with red warning tag) */
+html[data-studytube-reveal="true"] [data-studytube-filtered="hidden"],
+html[data-studytube-reveal="true"] ytd-movie-renderer,
+html[data-studytube-reveal="true"] ytd-radio-renderer {
+  display: block !important;
+  opacity: 0.35 !important;
+  filter: grayscale(80%) !important;
 }
 
+/* Study Content Verified Badge */
 .studytube-edu-tag {
   display: inline-flex;
   align-items: center;
@@ -106,11 +111,77 @@ ytd-compact-video-renderer[data-studytube-filtered="dimmed"]:hover {
   font-weight: 600;
   color: #2F6B4F;
   background: #E7F0E9;
-  border: 1px solid rgba(47, 107, 79, 0.2);
+  border: 1px solid rgba(47, 107, 79, 0.25);
   padding: 2px 8px;
   border-radius: 4px;
   margin-top: 4px;
   width: fit-content;
 }
 
+/* Search Results Filter Notification Banner */
+.studytube-search-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 20px 0;
+  padding: 12px 18px;
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-left: 4px solid #2F6B4F;
+  border-radius: 8px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
 
+@media (prefers-color-scheme: dark) {
+  .studytube-search-filter-banner {
+    background: #202020;
+    border-color: #343434;
+    border-left-color: #2F6B4F;
+    color: #F5F5F5;
+  }
+}
+
+.studytube-filter-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.studytube-filter-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.studytube-filter-sub {
+  font-size: 11px;
+  color: #737373;
+  margin-top: 2px;
+}
+
+.studytube-peek-btn {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #E5E5E5;
+  background: #F7F7F5;
+  color: #171717;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.studytube-peek-btn:hover {
+  background: #E5E5E5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .studytube-peek-btn {
+    background: #2A2A2A;
+    border-color: #404040;
+    color: #E5E5E5;
+  }
+  .studytube-peek-btn:hover {
+    background: #343434;
+  }
+}

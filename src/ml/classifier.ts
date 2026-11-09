@@ -1,3 +1,5 @@
+import defaultModelData from '../../public/model.json';
+
 export interface ModelData {
   version: string;
   model_type: string;
@@ -12,6 +14,7 @@ export interface PredictionResult {
   isEducational: boolean;
   probability: number;
   confidence: number;
+  reason?: string;
 }
 
 export class EducationalClassifier {
@@ -59,10 +62,12 @@ export class EducationalClassifier {
   }
 
   public predict(title: string, description: string = ''): PredictionResult {
-    const rawInput = `${title} ${description}`.trim();
-    if (this.cache.has(rawInput)) {
-      return this.cache.get(rawInput)!;
+    const cacheKey = `${title}\0${description}`;
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey)!;
     }
+
+    const rawInput = `${title} ${description}`.trim();
 
     if (!this.model) {
       // Fallback heuristic if model is not loaded yet
@@ -74,6 +79,7 @@ export class EducationalClassifier {
         probability: matches.length > 0 ? 0.75 : 0.25,
         confidence: 0.5,
       };
+      this.cache.set(cacheKey, fallbackResult);
       return fallbackResult;
     }
 
@@ -127,10 +133,10 @@ export class EducationalClassifier {
     };
 
     // Cache the result
-    this.cache.set(rawInput, result);
+    this.cache.set(cacheKey, result);
     return result;
   }
 }
 
-export const classifier = new EducationalClassifier();
-
+// Export pre-initialized singleton with bundled production model weights
+export const classifier = new EducationalClassifier(defaultModelData as unknown as ModelData);
